@@ -147,3 +147,31 @@ button {
   .chart     { grid-column: 1; }
   .watchlist { grid-column: 2; grid-row: 1 / span 2; }  /* sidebar spans both rows */
 }
+
+/* ================= Stage 2 additions ================= */
+.sort-bar { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+.sort-btn {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 0.3rem 0.7rem;
+  font-size: 0.85rem;
+}
+.sort-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.watchlist li { padding: 0; }
+.watchlist .stock-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem 0.4rem;
+  background: transparent;
+  color: var(--text);
+  border-radius: 6px;
+  text-align: left;
+}
+.watchlist .stock-row:hover { background: var(--bg); }
+.watchlist .stock-row.selected { background: #e8eefc; }
+.watchlist .stock-row span:first-child { font-weight: 600; }
+.empty { padding: 1rem 0; color: var(--muted); }

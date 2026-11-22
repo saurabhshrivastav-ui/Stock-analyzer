@@ -10,29 +10,18 @@
 
   <header class="site-header">
     <h1 class="logo">Stock Analyzer</h1>
-    <form class="search" role="search">
-      <label for="symbol" class="visually-hidden">Stock symbol</label>
-      <input id="symbol" type="search" placeholder="Search a symbol, e.g. AAPL">
+    <form class="search" role="search" id="search-form">
+      <label for="symbol" class="visually-hidden">Search stocks</label>
+      <input id="symbol" type="search" placeholder="Filter by name or symbol" autocomplete="off">
       <button type="submit">Search</button>
     </form>
   </header>
 
   <main class="layout">
 
-    <!-- Summary card -->
-    <section class="card summary" aria-labelledby="summary-title">
-      <h2 id="summary-title">Apple Inc. <span class="ticker">AAPL</span></h2>
-      <p class="price">$189.84</p>
-      <p class="change gain">+1.27 (+0.67%)</p>
-      <dl class="stats">
-        <div><dt>Open</dt><dd>$188.10</dd></div>
-        <div><dt>High</dt><dd>$190.40</dd></div>
-        <div><dt>Low</dt><dd>$187.55</dd></div>
-        <div><dt>Volume</dt><dd>52.3M</dd></div>
-      </dl>
-    </section>
+    <!-- Filled by ui.js -->
+    <section class="card summary" id="summary" aria-live="polite"></section>
 
-    <!-- Chart placeholder (Chart.js goes here in Stage 4) -->
     <section class="card chart" aria-labelledby="chart-title">
       <h2 id="chart-title">Price history</h2>
       <div class="timeframes">
@@ -44,15 +33,14 @@
       <div class="chart-placeholder">Chart coming in Stage 4</div>
     </section>
 
-    <!-- Watchlist -->
     <aside class="card watchlist" aria-labelledby="watch-title">
-      <h2 id="watch-title">Watchlist</h2>
-      <ul>
-        <li><span>MSFT</span><span>$415.20</span><span class="gain">+0.8%</span></li>
-        <li><span>TSLA</span><span>$242.64</span><span class="loss">-1.9%</span></li>
-        <li><span>GOOGL</span><span>$140.93</span><span class="gain">+0.3%</span></li>
-        <li><span>AMZN</span><span>$178.15</span><span class="loss">-0.4%</span></li>
-      </ul>
+      <h2 id="watch-title">Stocks</h2>
+      <div class="sort-bar" id="sort-bar">
+        <button type="button" class="sort-btn" data-sort="symbol">Name</button>
+        <button type="button" class="sort-btn" data-sort="price">Price</button>
+        <button type="button" class="sort-btn" data-sort="changePct">% Change</button>
+      </div>
+      <ul id="stock-list"></ul>
     </aside>
 
   </main>
@@ -61,5 +49,7 @@
     For educational purposes only. Not financial advice.
   </footer>
 
+  <!-- type="module" lets us use import/export between files -->
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
