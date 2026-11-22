@@ -175,3 +175,18 @@ button {
 .watchlist .stock-row.selected { background: #e8eefc; }
 .watchlist .stock-row span:first-child { font-weight: 600; }
 .empty { padding: 1rem 0; color: var(--muted); }
+
+/* ================= Stage 3 additions ================= */
+.strip { max-width: 1100px; margin: 0 auto; padding: var(--gap) var(--gap) 0; }
+.indices { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; }
+.index-card {
+  display: flex; flex-direction: column; gap: 0.1rem;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 0.6rem 0.8rem;
+}
+.index-name { font-size: 0.8rem; color: var(--muted); }
+.status { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-top: 0.75rem; font-size: 0.85rem; color: var(--muted); }
+.badge { padding: 0.15rem 0.6rem; border-radius: 999px; font-weight: 600; color: #fff; }
+.badge.open { background: var(--gain); }
+.badge.closed { background: var(--muted); }
+.error { color: var(--loss); font-weight: 600; }

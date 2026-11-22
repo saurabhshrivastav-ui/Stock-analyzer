@@ -12,10 +12,15 @@
     <h1 class="logo">Stock Analyzer</h1>
     <form class="search" role="search" id="search-form">
       <label for="symbol" class="visually-hidden">Search stocks</label>
-      <input id="symbol" type="search" placeholder="Filter by name or symbol" autocomplete="off">
+      <input id="symbol" type="search" placeholder="Filter, or type an NSE symbol e.g. ZOMATO" autocomplete="off">
       <button type="submit">Search</button>
     </form>
   </header>
+
+  <div class="strip">
+    <div id="indices" class="indices"></div>
+    <p id="status" class="status" role="status"></p>
+  </div>
 
   <main class="layout">
 
@@ -34,7 +39,7 @@
     </section>
 
     <aside class="card watchlist" aria-labelledby="watch-title">
-      <h2 id="watch-title">Stocks</h2>
+      <h2 id="watch-title">NSE Stocks</h2>
       <div class="sort-bar" id="sort-bar">
         <button type="button" class="sort-btn" data-sort="symbol">Name</button>
         <button type="button" class="sort-btn" data-sort="price">Price</button>

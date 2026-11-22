@@ -1,70 +1,102 @@
-// app.js: holds the state and wires events to rendering.
-import { stocks } from "./data.js";
-import { renderSummary, renderList, markActiveSort } from "./ui.js";
+import { INDICES, WATCHLIST, REFRESH_MS } from "./data.js";
+import { fetchQuotes } from "./api.js";
+import { renderSummary, renderList, renderIndices, renderStatus, markActiveSort } from "./ui.js";
 
-// 1. Grab elements once
 const form = document.querySelector("#search-form");
 const input = document.querySelector("#symbol");
 const sortBar = document.querySelector("#sort-bar");
 const listEl = document.querySelector("#stock-list");
 const summaryEl = document.querySelector("#summary");
+const indicesEl = document.querySelector("#indices");
+const statusEl = document.querySelector("#status");
 
-// 2. State: the single source of truth. The screen is just a picture of this.
+const labels = Object.fromEntries(INDICES.map((i) => [i.symbol, i.label]));
+
 const state = {
-  query: "",
-  sortKey: "symbol",
-  selected: stocks[0].symbol,
+  quotes: [], indices: [], extras: [],   // extras = symbols the user searched
+  query: "", sortKey: "symbol", selected: null,
+  loading: false, error: "", updatedAt: null,
 };
 
-// 3. Pure helper: takes data in, returns new data out, changes nothing
-function getVisibleStocks() {
-  const q = state.query.trim().toLowerCase();
-
-  return stocks
-    .filter((s) => s.symbol.toLowerCase().includes(q) || s.name.toLowerCase().includes(q))
-    .sort((a, b) =>
-      state.sortKey === "symbol"
-        ? a.symbol.localeCompare(b.symbol)
-        : b[state.sortKey] - a[state.sortKey] // high to low for numbers
-    );
+// NSE hours: Mon-Fri 9:15-15:30 IST (public holidays not handled)
+function isMarketOpen() {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Kolkata", weekday: "short", hour: "numeric", minute: "numeric", hour12: false })
+      .formatToParts(new Date()).map((x) => [x.type, x.value])
+  );
+  const mins = (Number(p.hour) % 24) * 60 + Number(p.minute);
+  return !["Sat", "Sun"].includes(p.weekday) && mins >= 555 && mins <= 930;
 }
 
-// 4. Render: redraw the page from state
-function render() {
-  const visible = getVisibleStocks();
-  const selectedStock = stocks.find((s) => s.symbol === state.selected);
+function visibleStocks() {
+  const q = state.query.trim().toLowerCase();
+  return state.quotes
+    .filter((s) => s.symbol.toLowerCase().includes(q) || s.name.toLowerCase().includes(q))
+    .sort((a, b) => state.sortKey === "symbol" ? a.symbol.localeCompare(b.symbol) : b[state.sortKey] - a[state.sortKey]);
+}
 
-  renderList(listEl, visible, state.selected);
-  renderSummary(summaryEl, selectedStock);
+function render() {
+  renderStatus(statusEl, { open: isMarketOpen(), ...state });
+  renderIndices(indicesEl, state.indices, labels);
+  renderList(listEl, visibleStocks(), state.selected, { loading: state.loading, hasData: state.quotes.length > 0 });
+  renderSummary(summaryEl, state.quotes.find((s) => s.symbol === state.selected));
   markActiveSort(sortBar, state.sortKey);
 }
 
-// 5. Events: change state, then render
-input.addEventListener("input", () => {
-  state.query = input.value;
-  render();
-});
+async function load() {
+  state.loading = true; state.error = ""; render();
+  try {
+    const [stocks, idx] = await Promise.all([
+      fetchQuotes([...WATCHLIST, ...state.extras]),
+      fetchQuotes(INDICES.map((i) => i.symbol)),
+    ]);
+    state.quotes = stocks.quotes;
+    state.indices = idx.quotes;
+    state.updatedAt = new Date();
+    if (!state.selected && state.quotes.length) state.selected = state.quotes[0].symbol;
+    if (stocks.errors.length) state.error = `Could not load: ${stocks.errors.map((e) => e.symbol).join(", ")}`;
+  } catch (err) {
+    state.error = "Could not reach the server. Check your connection and try again.";
+    console.error(err);
+  } finally {
+    state.loading = false; render();
+  }
+}
 
-form.addEventListener("submit", (e) => {
-  e.preventDefault(); // stop the page from reloading
-  const match = getVisibleStocks()[0];
-  if (match) state.selected = match.symbol;
-  render();
+// ----- events -----
+input.addEventListener("input", () => { state.query = input.value; render(); });
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const q = input.value.trim().toUpperCase();
+  if (!q) return;
+  const match = visibleStocks()[0];
+  if (match) { state.selected = match.symbol; return render(); }
+  // Not in our list: try it as an NSE symbol (e.g. "ZOMATO" -> "ZOMATO.NS")
+  const symbol = q.includes(".") ? q : `${q}.NS`;
+  state.extras.push(symbol);
+  state.query = ""; input.value = "";
+  state.selected = symbol;
+  await load();
+  if (!state.quotes.some((s) => s.symbol === symbol)) {
+    state.extras = state.extras.filter((s) => s !== symbol);
+    state.selected = state.quotes[0]?.symbol ?? null;
+    state.error = `Symbol "${q}" not found on NSE.`; render();
+  }
 });
 
 sortBar.addEventListener("click", (e) => {
-  const btn = e.target.closest(".sort-btn");
-  if (!btn) return;
-  state.sortKey = btn.dataset.sort;
-  render();
+  const b = e.target.closest(".sort-btn");
+  if (!b) return;
+  state.sortKey = b.dataset.sort; render();
 });
 
-// Event delegation: one listener on the list instead of one per row
 listEl.addEventListener("click", (e) => {
   const row = e.target.closest(".stock-row");
   if (!row) return;
-  state.selected = row.dataset.symbol;
-  render();
+  state.selected = row.dataset.symbol; render();
 });
 
-render(); // first paint
+// ----- start -----
+load();
+setInterval(() => { if (isMarketOpen() && !document.hidden) load(); }, REFRESH_MS);
