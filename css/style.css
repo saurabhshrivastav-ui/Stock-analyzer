@@ -190,3 +190,11 @@ button {
 .badge.open { background: var(--gain); }
 .badge.closed { background: var(--muted); }
 .error { color: var(--loss); font-weight: 600; }
+
+/* ================= Stage 4 additions ================= */
+.chart-box { position: relative; height: 300px; }  /* Chart.js needs a sized parent */
+.chart-msg {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  color: var(--muted); text-align: center; pointer-events: none;
+}

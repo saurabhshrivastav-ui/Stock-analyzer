@@ -24,18 +24,20 @@
 
   <main class="layout">
 
-    <!-- Filled by ui.js -->
     <section class="card summary" id="summary" aria-live="polite"></section>
 
     <section class="card chart" aria-labelledby="chart-title">
-      <h2 id="chart-title">Price history</h2>
-      <div class="timeframes">
-        <button type="button">1W</button>
-        <button type="button" class="active">1M</button>
-        <button type="button">6M</button>
-        <button type="button">1Y</button>
+      <h2 id="chart-title">Price history (daily close)</h2>
+      <div class="timeframes" id="timeframes">
+        <button type="button" data-range="5d">1W</button>
+        <button type="button" data-range="1mo" class="active">1M</button>
+        <button type="button" data-range="6mo">6M</button>
+        <button type="button" data-range="1y">1Y</button>
       </div>
-      <div class="chart-placeholder">Chart coming in Stage 4</div>
+      <div class="chart-box">
+        <canvas id="price-chart" aria-label="Price history chart" role="img"></canvas>
+        <p id="chart-msg" class="chart-msg" role="status"></p>
+      </div>
     </section>
 
     <aside class="card watchlist" aria-labelledby="watch-title">
@@ -54,7 +56,8 @@
     For educational purposes only. Not financial advice.
   </footer>
 
-  <!-- type="module" lets us use import/export between files -->
+  <!-- Chart.js from CDN (pinned version). Plain script, loads before our module. -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

@@ -61,3 +61,7 @@ export function renderStatus(el, { open, updatedAt, error, loading }) {
 export function markActiveSort(bar, key) {
   bar.querySelectorAll(".sort-btn").forEach((b) => b.classList.toggle("active", b.dataset.sort === key));
 }
+
+export function markActiveRange(bar, range) {
+  bar.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b.dataset.range === range));
+}
