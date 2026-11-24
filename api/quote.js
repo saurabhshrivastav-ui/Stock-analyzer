@@ -40,7 +40,10 @@ module.exports = async (req, res) => {
     .slice(0, 25);
 
   // Validate input: never trust what the browser sends
-  if (symbols.length === 0 || !symbols.every((s) => /^[\w.&^-]{1,20}$/.test(s))) {
+  if (
+    symbols.length === 0 ||
+    !symbols.every((s) => /^[\w.&^-]{1,20}$/.test(s))
+  ) {
     return res.status(400).json({ error: "Provide valid ?symbols=A.NS,B.NS" });
   }
 
@@ -50,7 +53,7 @@ module.exports = async (req, res) => {
   settled.forEach((r, i) =>
     r.status === "fulfilled"
       ? quotes.push(r.value)
-      : errors.push({ symbol: symbols[i], message: r.reason.message })
+      : errors.push({ symbol: symbols[i], message: r.reason.message }),
   );
 
   // Cache at Vercel's edge for 60s so we don't hammer Yahoo

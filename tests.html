@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>analysis.js tests</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 720px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      li {
+        margin: 0.4rem 0;
+        list-style: none;
+      }
+      .pass {
+        color: #0f9d58;
+      }
+      .fail {
+        color: #d93025;
+      }
+      code {
+        background: #eef;
+        padding: 0 4px;
+        border-radius: 4px;
+      }
+      #summary {
+        font-weight: 700;
+        margin: 1rem 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>analysis.js tests</h1>
+    <p id="summary"></p>
+    <ul id="results"></ul>
+
+    <script type="module">
+      import {
+        sma,
+        dailyChanges,
+        periodStats,
+        rsi,
+        trendSignal,
+      } from "./js/analysis.js";
+
+      const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+      const near = (a, b) => typeof a === "number" && Math.abs(a - b) < 1e-6;
+      const rising = Array.from({ length: 20 }, (_, i) => 100 + i);
+      const falling = Array.from({ length: 20 }, (_, i) => 200 - i);
+      const pts = [
+        { close: 100, volume: 10 },
+        { close: 120, volume: 20 },
+        { close: 90, volume: 30 },
+      ];
+      const ps = periodStats(pts);
+
+      const tests = [
+        [
+          "sma([1,2,3,4,5], 3)",
+          () => same(sma([1, 2, 3, 4, 5], 3), [null, null, 2, 3, 4]),
+        ],
+        [
+          "sma keeps same length as input",
+          () => sma(rising, 5).length === rising.length,
+        ],
+        [
+          "sma with too little data is all null",
+          () => same(sma([1, 2], 5), [null, null]),
+        ],
+        [
+          "dailyChanges([100,110,99])",
+          () => {
+            const r = dailyChanges([100, 110, 99]);
+            return r.length === 2 && near(r[0], 10) && near(r[1], -10);
+          },
+        ],
+        [
+          "periodStats changePct (100 -> 90 = -10)",
+          () => near(ps.changePct, -10),
+        ],
+        ["periodStats high / low", () => ps.high === 120 && ps.low === 90],
+        ["periodStats avgVolume", () => near(ps.avgVolume, 20)],
+        [
+          "periodStats on empty array doesn't crash",
+          () => periodStats([]).high === null,
+        ],
+        ["rsi of only rising prices = 100", () => near(rsi(rising, 14), 100)],
+        ["rsi of only falling prices = 0", () => near(rsi(falling, 14), 0)],
+        ["rsi with too little data = null", () => rsi([1, 2, 3], 14) === null],
+        [
+          "trendSignal above SMA = Bullish",
+          () => trendSignal(110, 100) === "Bullish",
+        ],
+        [
+          "trendSignal below SMA = Bearish",
+          () => trendSignal(90, 100) === "Bearish",
+        ],
+        [
+          "trendSignal equal = Neutral",
+          () => trendSignal(100, 100) === "Neutral",
+        ],
+        [
+          "trendSignal with null SMA = Insufficient data",
+          () => trendSignal(100, null) === "Insufficient data",
+        ],
+      ];
+
+      const list = document.querySelector("#results");
+      let passed = 0;
+      for (const [name, fn] of tests) {
+        let ok = false,
+          err = "";
+        try {
+          ok = fn();
+        } catch (e) {
+          err = ` (error: ${e.message})`;
+        }
+        if (ok) passed++;
+        list.insertAdjacentHTML(
+          "beforeend",
+          `<li class="${ok ? "pass" : "fail"}">${ok ? "✓" : "✗"} <code>${name}</code>${err}</li>`,
+        );
+      }
+      document.querySelector("#summary").textContent =
+        `${passed} / ${tests.length} passing`;
+    </script>
+  </body>
+</html>

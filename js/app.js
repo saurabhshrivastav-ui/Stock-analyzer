@@ -1,7 +1,22 @@
 import { INDICES, WATCHLIST, REFRESH_MS } from "./data.js";
 import { fetchQuotes, fetchHistory } from "./api.js";
-import { renderSummary, renderList, renderIndices, renderStatus, markActiveSort, markActiveRange } from "./ui.js";
+import {
+  renderSummary,
+  renderList,
+  renderIndices,
+  renderStatus,
+  markActiveSort,
+  markActiveRange,
+  renderAnalysis,
+} from "./ui.js";
 import { drawChart, clearChart } from "./chart.js";
+import {
+  sma,
+  dailyChanges,
+  periodStats,
+  rsi,
+  trendSignal,
+} from "./analysis.js";
 
 const form = document.querySelector("#search-form");
 const input = document.querySelector("#symbol");
@@ -13,20 +28,35 @@ const statusEl = document.querySelector("#status");
 const timeframesEl = document.querySelector("#timeframes");
 const canvas = document.querySelector("#price-chart");
 const chartMsg = document.querySelector("#chart-msg");
+const analysisEl = document.querySelector("#analysis");
 
 const labels = Object.fromEntries(INDICES.map((i) => [i.symbol, i.label]));
 
 const state = {
-  quotes: [], indices: [], extras: [],
-  query: "", sortKey: "symbol", selected: null, range: "1mo",
-  loading: false, error: "", updatedAt: null,
+  quotes: [],
+  indices: [],
+  extras: [],
+  query: "",
+  sortKey: "symbol",
+  selected: null,
+  range: "1mo",
+  loading: false,
+  error: "",
+  updatedAt: null,
 };
 
 // NSE hours: Mon-Fri 9:15-15:30 IST (public holidays not handled)
 function isMarketOpen() {
   const p = Object.fromEntries(
-    new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Kolkata", weekday: "short", hour: "numeric", minute: "numeric", hour12: false })
-      .formatToParts(new Date()).map((x) => [x.type, x.value])
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Kolkata",
+      weekday: "short",
+      hour: "numeric",
+      minute: "numeric",
+      hour12: false,
+    })
+      .formatToParts(new Date())
+      .map((x) => [x.type, x.value]),
   );
   const mins = (Number(p.hour) % 24) * 60 + Number(p.minute);
   return !["Sat", "Sun"].includes(p.weekday) && mins >= 555 && mins <= 930;
@@ -35,23 +65,36 @@ function isMarketOpen() {
 function visibleStocks() {
   const q = state.query.trim().toLowerCase();
   return state.quotes
-    .filter((s) => s.symbol.toLowerCase().includes(q) || s.name.toLowerCase().includes(q))
-    .sort((a, b) => state.sortKey === "symbol" ? a.symbol.localeCompare(b.symbol) : b[state.sortKey] - a[state.sortKey]);
+    .filter(
+      (s) =>
+        s.symbol.toLowerCase().includes(q) || s.name.toLowerCase().includes(q),
+    )
+    .sort((a, b) =>
+      state.sortKey === "symbol"
+        ? a.symbol.localeCompare(b.symbol)
+        : b[state.sortKey] - a[state.sortKey],
+    );
 }
 
 // render() draws text/lists. The chart is NOT redrawn here (it'd flicker every refresh).
 function render() {
   renderStatus(statusEl, { open: isMarketOpen(), ...state });
   renderIndices(indicesEl, state.indices, labels);
-  renderList(listEl, visibleStocks(), state.selected, { loading: state.loading, hasData: state.quotes.length > 0 });
-  renderSummary(summaryEl, state.quotes.find((s) => s.symbol === state.selected));
+  renderList(listEl, visibleStocks(), state.selected, {
+    loading: state.loading,
+    hasData: state.quotes.length > 0,
+  });
+  renderSummary(
+    summaryEl,
+    state.quotes.find((s) => s.symbol === state.selected),
+  );
   markActiveSort(sortBar, state.sortKey);
   markActiveRange(timeframesEl, state.range);
 }
 
 // ----- chart loading -----
 const historyCache = new Map(); // "TCS.NS|1mo" -> points (avoids refetching)
-let historyRequestId = 0;       // guards against out-of-order responses
+let historyRequestId = 0; // guards against out-of-order responses
 
 async function loadHistory() {
   const symbol = state.selected;
@@ -68,12 +111,34 @@ async function loadHistory() {
     }
     if (myId !== historyRequestId) return; // user clicked something newer; ignore this result
 
-    if (points.length < 2) { clearChart(); chartMsg.textContent = "Not enough data to draw a chart."; return; }
+    if (points.length < 2) {
+      clearChart();
+      analysisEl.innerHTML = "";
+      chartMsg.textContent = "Not enough data to draw a chart.";
+      return;
+    }
     chartMsg.textContent = "";
-    drawChart(canvas, points, symbol);
+    const closes = points.map((p) => p.close);
+    const sma20 = sma(closes, 20);
+    const sma50 = sma(closes, 50);
+    drawChart(canvas, points, symbol, [
+      { label: "SMA 20", data: sma20, color: "#f59e0b" },
+      { label: "SMA 50", data: sma50, color: "#2457d6" },
+    ]);
+
+    const changes = dailyChanges(closes);
+    renderAnalysis(analysisEl, {
+      stats: periodStats(points),
+      rsi: rsi(closes, 14),
+      signal: trendSignal(closes[closes.length - 1], sma50[sma50.length - 1]),
+      bestDay: changes.length ? Math.max(...changes) : null,
+      worstDay: changes.length ? Math.min(...changes) : null,
+      hasSma: sma50.some((v) => v != null),
+    });
   } catch (err) {
     if (myId !== historyRequestId) return;
     clearChart();
+    analysisEl.innerHTML = "";
     chartMsg.textContent = `Chart unavailable: ${err.message}`;
   }
 }
@@ -86,7 +151,9 @@ function selectStock(symbol) {
 
 // ----- quote loading -----
 async function load() {
-  state.loading = true; state.error = ""; render();
+  state.loading = true;
+  state.error = "";
+  render();
   let firstSelection = false;
   try {
     const [stocks, idx] = await Promise.all([
@@ -96,19 +163,27 @@ async function load() {
     state.quotes = stocks.quotes;
     state.indices = idx.quotes;
     state.updatedAt = new Date();
-    if (!state.selected && state.quotes.length) { state.selected = state.quotes[0].symbol; firstSelection = true; }
-    if (stocks.errors.length) state.error = `Could not load: ${stocks.errors.map((e) => e.symbol).join(", ")}`;
+    if (!state.selected && state.quotes.length) {
+      state.selected = state.quotes[0].symbol;
+      firstSelection = true;
+    }
+    if (stocks.errors.length)
+      state.error = `Could not load: ${stocks.errors.map((e) => e.symbol).join(", ")}`;
   } catch (err) {
     state.error = err.message;
     console.error(err);
   } finally {
-    state.loading = false; render();
+    state.loading = false;
+    render();
   }
   if (firstSelection) loadHistory();
 }
 
 // ----- events -----
-input.addEventListener("input", () => { state.query = input.value; render(); });
+input.addEventListener("input", () => {
+  state.query = input.value;
+  render();
+});
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -119,7 +194,8 @@ form.addEventListener("submit", async (e) => {
 
   const symbol = q.includes(".") ? q : `${q}.NS`;
   state.extras.push(symbol);
-  state.query = ""; input.value = "";
+  state.query = "";
+  input.value = "";
   state.selected = symbol;
   await load();
   if (state.quotes.some((s) => s.symbol === symbol)) {
@@ -127,7 +203,8 @@ form.addEventListener("submit", async (e) => {
   } else {
     state.extras = state.extras.filter((s) => s !== symbol);
     state.selected = state.quotes[0]?.symbol ?? null;
-    state.error = `Symbol "${q}" not found on NSE.`; render();
+    state.error = `Symbol "${q}" not found on NSE.`;
+    render();
     loadHistory();
   }
 });
@@ -135,7 +212,8 @@ form.addEventListener("submit", async (e) => {
 sortBar.addEventListener("click", (e) => {
   const b = e.target.closest(".sort-btn");
   if (!b) return;
-  state.sortKey = b.dataset.sort; render();
+  state.sortKey = b.dataset.sort;
+  render();
 });
 
 listEl.addEventListener("click", (e) => {
@@ -153,4 +231,6 @@ timeframesEl.addEventListener("click", (e) => {
 
 // ----- start -----
 load();
-setInterval(() => { if (isMarketOpen() && !document.hidden) load(); }, REFRESH_MS);
+setInterval(() => {
+  if (isMarketOpen() && !document.hidden) load();
+}, REFRESH_MS);
