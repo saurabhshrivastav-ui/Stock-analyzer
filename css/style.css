@@ -350,3 +350,133 @@ button {
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+/* ================= Stage 6 additions ================= */
+:root {
+  --selected: #e8eefc;
+}
+:root[data-theme="dark"] {
+  --bg: #0f1420;
+  --surface: #181f2e;
+  --text: #e6eaf2;
+  --muted: #9aa5bd;
+  --border: #2a3347;
+  --accent: #4a78f5;
+  --gain: #34d399;
+  --loss: #f87171;
+  --selected: #22305a;
+  color-scheme: dark;
+}
+.search input {
+  background: var(--surface);
+  color: var(--text);
+}
+.watchlist .stock-row.selected {
+  background: var(--selected);
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+}
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+  z-index: 20;
+  padding: 0.5rem 1rem;
+  background: var(--surface);
+  color: var(--text);
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+}
+
+.header-tools {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.search {
+  position: relative;
+}
+.theme-toggle {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.8rem;
+  font-size: 0.9rem;
+}
+.theme-toggle[aria-pressed="true"] {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  margin-top: 4px;
+  padding: 4px;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+.suggestion {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+.suggestion:hover {
+  background: var(--bg);
+}
+.suggestion small {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.link-btn {
+  background: none;
+  color: var(--accent);
+  padding: 0.2rem 0.4rem;
+  font-size: 0.85rem;
+  text-decoration: underline;
+}
+
+.watchlist .stock-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.watchlist .stock-item .stock-row {
+  flex: 1;
+  width: auto;
+}
+.remove-btn {
+  background: transparent;
+  color: var(--muted);
+  padding: 0.4rem 0.6rem;
+  font-size: 0.9rem;
+  border-radius: 6px;
+}
+.remove-btn:hover {
+  color: var(--loss);
+  background: var(--bg);
+}

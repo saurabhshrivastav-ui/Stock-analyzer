@@ -17,11 +17,16 @@ const fmtPrice = (v) =>
     maximumFractionDigits: 2,
   });
 
-// overlays: [{ label, data: [numbers or null], color }], drawn as dashed lines
+// Read colors from the CSS variables so the chart follows light/dark theme
+const cssVar = (name) =>
+  getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
 export function drawChart(canvas, points, label, overlays = []) {
   clearChart();
   const up = points[points.length - 1].close >= points[0].close;
-  const color = up ? "#0f9d58" : "#d93025";
+  const color = up ? cssVar("--gain") : cssVar("--loss");
+  const muted = cssVar("--muted");
+  const gridColor = cssVar("--border");
   const hasOverlay = overlays.some((o) => o.data.some((v) => v != null));
 
   chart = new Chart(canvas, {
@@ -57,7 +62,7 @@ export function drawChart(canvas, points, label, overlays = []) {
       maintainAspectRatio: false,
       interaction: { mode: "index", intersect: false },
       plugins: {
-        legend: { display: hasOverlay },
+        legend: { display: hasOverlay, labels: { color: muted } },
         tooltip: {
           callbacks: {
             label: (c) =>
@@ -68,8 +73,17 @@ export function drawChart(canvas, points, label, overlays = []) {
         },
       },
       scales: {
-        x: { ticks: { maxTicksLimit: 6 }, grid: { display: false } },
-        y: { ticks: { callback: (v) => "₹" + v.toLocaleString("en-IN") } },
+        x: {
+          ticks: { maxTicksLimit: 6, color: muted },
+          grid: { display: false },
+        },
+        y: {
+          ticks: {
+            color: muted,
+            callback: (v) => "₹" + v.toLocaleString("en-IN"),
+          },
+          grid: { color: gridColor },
+        },
       },
     },
   });

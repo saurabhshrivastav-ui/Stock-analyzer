@@ -21,8 +21,7 @@ const inr = (n) =>
       });
 const signed = (n) => (n >= 0 ? "+" : "") + n.toFixed(2);
 const trend = (n) => (n >= 0 ? "gain" : "loss");
-
-// Indian style: lakh (L) and crore (Cr)
+const pct = (v) => (v == null ? "—" : signed(v) + "%");
 const volume = (n) =>
   n == null
     ? "—"
@@ -50,7 +49,16 @@ export function renderSummary(el, s) {
     </dl>`;
 }
 
-export function renderList(el, stocks, selected, { loading, hasData }) {
+export function renderList(
+  el,
+  stocks,
+  selected,
+  { loading, hasData, emptyWatchlist },
+) {
+  if (emptyWatchlist) {
+    el.innerHTML = `<li class="empty">Your watchlist is empty. Search above to add a stock.</li>`;
+    return;
+  }
   if (loading && !hasData) {
     el.innerHTML = `<li class="empty">Loading live prices…</li>`;
     return;
@@ -60,16 +68,19 @@ export function renderList(el, stocks, selected, { loading, hasData }) {
     return;
   }
   el.innerHTML = stocks
-    .map(
-      (s) => `
-    <li>
-      <button type="button" class="stock-row ${s.symbol === selected ? "selected" : ""}" data-symbol="${esc(s.symbol)}">
+    .map((s) => {
+      const isSel = s.symbol === selected;
+      return `
+    <li class="stock-item">
+      <button type="button" class="stock-row ${isSel ? "selected" : ""}" data-symbol="${esc(s.symbol)}" ${isSel ? 'aria-current="true"' : ""}>
         <span>${esc(clean(s.symbol))}</span>
         <span>${inr(s.price)}</span>
         <span class="${trend(s.changePct)}">${signed(s.changePct)}%</span>
       </button>
-    </li>`,
-    )
+      <button type="button" class="remove-btn" data-remove="${esc(s.symbol)}"
+              aria-label="Remove ${esc(clean(s.symbol))} from watchlist" title="Remove">✕</button>
+    </li>`;
+    })
     .join("");
 }
 
@@ -100,19 +111,39 @@ export function renderStatus(el, { open, updatedAt, error, loading }) {
     ${error ? `<span class="error">${esc(error)}</span>` : ""}`;
 }
 
+export function renderSuggestions(el, items) {
+  if (items.length === 0) {
+    el.hidden = true;
+    el.innerHTML = "";
+    return;
+  }
+  el.hidden = false;
+  el.innerHTML = items
+    .map(
+      (x) => `
+    <li><button type="button" class="suggestion" data-symbol="${esc(x.symbol)}">
+      <span>${esc(x.name)}</span><small>${esc(clean(x.symbol))} · ${esc(x.exchange)}</small>
+    </button></li>`,
+    )
+    .join("");
+}
+
+// aria-pressed tells screen readers which toggle button is "on"
 export function markActiveSort(bar, key) {
-  bar
-    .querySelectorAll(".sort-btn")
-    .forEach((b) => b.classList.toggle("active", b.dataset.sort === key));
+  bar.querySelectorAll(".sort-btn").forEach((b) => {
+    const on = b.dataset.sort === key;
+    b.classList.toggle("active", on);
+    b.setAttribute("aria-pressed", String(on));
+  });
 }
 
 export function markActiveRange(bar, range) {
-  bar
-    .querySelectorAll("button")
-    .forEach((b) => b.classList.toggle("active", b.dataset.range === range));
+  bar.querySelectorAll("button").forEach((b) => {
+    const on = b.dataset.range === range;
+    b.classList.toggle("active", on);
+    b.setAttribute("aria-pressed", String(on));
+  });
 }
-
-const pct = (v) => (v == null ? "—" : signed(v) + "%");
 
 export function renderAnalysis(el, a) {
   const rsiText =
