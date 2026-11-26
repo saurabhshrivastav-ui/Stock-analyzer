@@ -15,7 +15,7 @@ export function sma(values, period) {
     // Here: the `period` values ending at day i.
     const windowValues = values.slice(i - period + 1, i + 1);
 
-    // reduce adds them all up, starting the running total at 0
+    // // reduce adds them all up, starting the running total at 0
     const total = windowValues.reduce((sum, v) => sum + v, 0);
     return total / period;
   });

@@ -1,1 +1,12 @@
-.vercel
+# dependencies and tooling
+node_modules/
+.vercel/
+
+# secrets: NEVER commit these
+.env
+.env.*
+!.env.example
+
+# OS / editor junk
+.DS_Store
+Thumbs.db

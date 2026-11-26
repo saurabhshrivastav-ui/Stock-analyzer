@@ -1,5 +1,7 @@
 // Runs on Vercel's server, not in the browser.
 // Browser calls: /api/quote?symbols=RELIANCE.NS,TCS.NS,^NSEI
+// Environment variable with a safe default. Set CACHE_SECONDS in Vercel to change it.
+const CACHE_SECONDS = Number(process.env.CACHE_SECONDS) || 60;
 const YF = "https://query1.finance.yahoo.com/v8/finance/chart/";
 
 async function getQuote(symbol) {
@@ -40,10 +42,7 @@ module.exports = async (req, res) => {
     .slice(0, 25);
 
   // Validate input: never trust what the browser sends
-  if (
-    symbols.length === 0 ||
-    !symbols.every((s) => /^[\w.&^-]{1,20}$/.test(s))
-  ) {
+  if (symbols.length === 0 || !symbols.every((s) => /^[\w.&^-]{1,20}$/.test(s))) {
     return res.status(400).json({ error: "Provide valid ?symbols=A.NS,B.NS" });
   }
 
@@ -53,10 +52,10 @@ module.exports = async (req, res) => {
   settled.forEach((r, i) =>
     r.status === "fulfilled"
       ? quotes.push(r.value)
-      : errors.push({ symbol: symbols[i], message: r.reason.message }),
+      : errors.push({ symbol: symbols[i], message: r.reason.message })
   );
 
   // Cache at Vercel's edge for 60s so we don't hammer Yahoo
-  res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=30");
+  res.setHeader("Cache-Control", `s-maxage=${CACHE_SECONDS}, stale-while-revalidate=30`);
   res.status(200).json({ quotes, errors });
 };
