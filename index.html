@@ -10,12 +10,12 @@
     />
     <meta
       name="theme-color"
-      content="#f5f7fa"
+      content="#f4f6fa"
       media="(prefers-color-scheme: light)"
     />
     <meta
       name="theme-color"
-      content="#0f1420"
+      content="#090d16"
       media="(prefers-color-scheme: dark)"
     />
     <meta property="og:title" content="Stock Analyzer: Indian Market" />
@@ -28,14 +28,17 @@
       rel="icon"
       href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%20100%20100%27%3E%3Ctext%20y%3D%27.9em%27%20font-size%3D%2790%27%3E%F0%9F%93%88%3C/text%3E%3C/svg%3E"
     />
-    <!-- Runs before the page paints, so a dark-mode user never sees a white flash -->
+    <!-- Runs before paint so dark-mode users never see a white flash -->
     <script>
       try {
         var t = JSON.parse(localStorage.getItem("sa:theme"));
-        if (t === "dark" || t === "light")
+        if (t === "dark" || t === "light") {
           document.documentElement.dataset.theme = t;
-        else if (matchMedia("(prefers-color-scheme: dark)").matches)
+          document.documentElement.dataset.darkMode = String(t === "dark");
+        } else if (matchMedia("(prefers-color-scheme: dark)").matches) {
           document.documentElement.dataset.theme = "dark";
+          document.documentElement.dataset.darkMode = "true";
+        }
       } catch (e) {}
     </script>
     <link rel="stylesheet" href="css/style.css" />
@@ -45,18 +48,48 @@
 
     <header class="site-header">
       <h1 class="logo">Stock Analyzer</h1>
+
       <div class="header-tools">
         <form class="search" role="search" id="search-form">
           <label for="symbol" class="visually-hidden"
             >Search stocks by company name or symbol</label
           >
-          <input
-            id="symbol"
-            type="search"
-            placeholder="Search e.g. Zomato, Tata, INFY"
-            autocomplete="off"
-          />
-          <button type="submit">Search</button>
+          <div class="search-field">
+            <svg
+              class="search-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input
+              id="symbol"
+              type="search"
+              placeholder="Search e.g. Zomato, Tata, INFY"
+              autocomplete="off"
+            />
+          </div>
+          <button type="submit" class="search-btn">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <span>Search</span>
+          </button>
           <ul
             id="suggestions"
             class="suggestions"
@@ -64,13 +97,128 @@
             hidden
           ></ul>
         </form>
+
+        <!-- Animated Day / Night Sun-Moon-Stars-Bear Theme Toggle -->
         <button
           type="button"
           id="theme-toggle"
-          class="theme-toggle"
+          class="toggle theme-toggle"
           aria-pressed="false"
+          aria-label="Toggle dark mode"
         >
-          Dark mode
+          <span class="visually-hidden" id="theme-toggle-label">Dark mode</span>
+          <span class="toggle__content" aria-hidden="true">
+            <!-- Clouds (Light Mode) -->
+            <svg
+              class="toggle__backdrop"
+              viewBox="0 0 800 300"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <g class="clouds">
+                <path
+                  d="M720 260C760 260 795 230 795 190C795 152 765 122 728 120C715 75 674 42 625 42C570 42 525 82 518 135C485 140 460 168 460 202C460 238 490 260 526 260H720Z"
+                  fill="white"
+                />
+                <path
+                  d="M760 285C798 285 828 255 828 218C828 182 800 153 765 150C752 108 712 78 665 78C612 78 568 116 560 168C528 173 504 200 504 232C504 266 532 285 566 285H760Z"
+                  fill="white"
+                />
+              </g>
+            </svg>
+
+            <!-- Twinkling Stars (Dark Mode) -->
+            <svg
+              class="toggle__backdrop"
+              viewBox="0 0 800 300"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <g class="stars" fill="white">
+                <g>
+                  <path
+                    d="M160 65L164 76L175 80L164 84L160 95L156 84L145 80L156 76L160 65Z"
+                  />
+                </g>
+                <g>
+                  <path
+                    d="M260 40L263 48L271 51L263 54L260 62L257 54L249 51L257 48L260 40Z"
+                  />
+                </g>
+                <g>
+                  <path
+                    d="M350 95L355 108L368 113L355 118L350 131L345 118L332 113L345 108L350 95Z"
+                  />
+                </g>
+                <g><circle cx="215" cy="135" r="4" /></g>
+                <g><circle cx="410" cy="60" r="5" /></g>
+                <g><circle cx="120" cy="145" r="3.5" /></g>
+                <g><circle cx="310" cy="165" r="4" /></g>
+                <g><circle cx="465" cy="125" r="3.5" /></g>
+                <g>
+                  <path
+                    d="M490 50L494 60L504 64L494 68L490 78L486 68L476 64L486 60L490 50Z"
+                  />
+                </g>
+                <g><circle cx="240" cy="200" r="3" /></g>
+                <g>
+                  <path
+                    d="M185 185L188 193L196 196L188 199L185 207L182 199L174 196L182 193L185 185Z"
+                  />
+                </g>
+              </g>
+            </svg>
+
+            <!-- Astrobear (Dark Mode) -->
+            <span class="astrobear__container">
+              <span class="astrobear">
+                <svg viewBox="0 0 64 64" fill="none">
+                  <circle cx="18" cy="18" r="7" fill="#cbd5e1" />
+                  <circle cx="46" cy="18" r="7" fill="#cbd5e1" />
+                  <circle cx="32" cy="34" r="18" fill="#f8fafc" />
+                  <ellipse cx="32" cy="36" rx="13" ry="10" fill="#1e293b" />
+                  <circle cx="27" cy="35" r="2" fill="#38bdf8" />
+                  <circle cx="37" cy="35" r="2" fill="#38bdf8" />
+                </svg>
+              </span>
+            </span>
+
+            <!-- Pilot Bear (Light Mode) -->
+            <span class="pilot__container">
+              <span class="pilot-bear">
+                <svg class="pilot" viewBox="0 0 64 64" fill="none">
+                  <circle cx="20" cy="20" r="6" fill="#92400e" />
+                  <circle cx="44" cy="20" r="6" fill="#92400e" />
+                  <circle cx="32" cy="32" r="15" fill="#b45309" />
+                  <rect
+                    x="20"
+                    y="26"
+                    width="24"
+                    height="8"
+                    rx="4"
+                    fill="#38bdf8"
+                    stroke="#1e293b"
+                    stroke-width="2"
+                  />
+                  <circle cx="32" cy="39" r="3" fill="#1e293b" />
+                </svg>
+              </span>
+            </span>
+
+            <!-- Sun & Moon Indicator -->
+            <span class="toggle__indicator-wrapper">
+              <span class="toggle__indicator">
+                <span class="toggle__star">
+                  <span class="sun"></span>
+                  <span class="moon">
+                    <span class="moon__crater"></span>
+                    <span class="moon__crater"></span>
+                    <span class="moon__crater"></span>
+                  </span>
+                </span>
+              </span>
+            </span>
+          </span>
         </button>
       </div>
     </header>
@@ -84,26 +232,68 @@
       <section class="card summary" id="summary" aria-live="polite"></section>
 
       <section class="card chart" aria-labelledby="chart-title">
-        <h2 id="chart-title">Price history (daily close)</h2>
-        <div
-          class="timeframes"
-          id="timeframes"
-          role="group"
-          aria-label="Time range"
-        >
-          <button type="button" data-range="5d">1W</button>
-          <button type="button" data-range="1mo" class="active">1M</button>
-          <button type="button" data-range="6mo">6M</button>
-          <button type="button" data-range="1y">1Y</button>
+        <div class="card-head">
+          <h2 id="chart-title">Price history (daily close)</h2>
         </div>
+
+        <div class="chart-toolbar">
+          <div
+            class="timeframes"
+            id="timeframes"
+            role="group"
+            aria-label="Time range"
+          >
+            <button type="button" data-range="5d">1W</button>
+            <button type="button" data-range="1mo" class="active">1M</button>
+            <button type="button" data-range="6mo">6M</button>
+            <button type="button" data-range="1y">1Y</button>
+          </div>
+
+          <div
+            class="chart-types"
+            id="chart-types"
+            role="group"
+            aria-label="Chart visualization style"
+          >
+            <button type="button" class="active" data-chart-type="line">
+              Line
+            </button>
+            <button type="button" class="is-3d" data-chart-type="area3d">
+              Area
+            </button>
+            <button type="button" class="is-3d" data-chart-type="bar3d">
+              Bar
+            </button>
+            <button type="button" class="is-3d" data-chart-type="pie3d">
+              Pie
+            </button>
+            <button type="button" class="is-3d" data-chart-type="donut3d">
+              Donut
+            </button>
+          </div>
+        </div>
+
+        <div class="chart-hint" id="chart-hint" hidden>
+          <span id="chart-mode-label">3D Interactive View</span>
+          <span>Click &amp; drag chart to rotate 3D angle</span>
+        </div>
+
         <div class="chart-box">
           <canvas
             id="price-chart"
             role="img"
             aria-label="Price history chart"
           ></canvas>
+          <div
+            id="chart-3d"
+            class="chart-3d"
+            role="img"
+            aria-label="3D interactive stock chart"
+            hidden
+          ></div>
           <p id="chart-msg" class="chart-msg" role="status"></p>
         </div>
+
         <div id="analysis" class="analysis"></div>
       </section>
 
@@ -138,7 +328,11 @@
       For educational purposes only. Not financial advice.
     </footer>
 
+    <!-- Existing Chart.js + Highcharts 3D -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/highcharts-3d.js"></script>
     <script type="module" src="js/app.js"></script>
+    <script src="js/charts-3d.js" defer></script>
   </body>
 </html>
